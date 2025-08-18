@@ -19,7 +19,7 @@ def load_config(config_path):
     except Exception as e:
         raise Exception(f"Error loading config file: {str(e)}")
 
-def create_payment(amount=1000, currency="chf", card_number="4242424242424242", exp_month=12, exp_year=2025, cvc="123", config=None):
+def create_payment(amount=1000, currency="chf", config=None):
     """Create a payment intent and return its details"""
     if config is None:
         config = {'payment_settings': {'check_interval': 5, 'max_attempts': 6}}
