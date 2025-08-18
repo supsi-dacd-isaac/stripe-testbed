@@ -45,7 +45,7 @@ ENV/
 logs/
 
 # Configuration files
-conf/config.json
+python/conf/config.json
 *.config.json
 *.secrets.*
 
