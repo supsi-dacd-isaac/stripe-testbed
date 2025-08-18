@@ -248,3 +248,7 @@ if __name__ == "__main__":
         if not args.payment_id:
             parser.error("--payment-id is required for payment-details operation")
         get_payment_details(args.payment_id)
+
+    print("\n*** IMPORTANT DISCLAIMER ***")
+    print("Conventionally, Stripe considers cents as the integer atomic unit for currency.")
+    print("Thus, for example in the Swiss case 100 chf in Stripe correspond actually to real 1 CHF.")
