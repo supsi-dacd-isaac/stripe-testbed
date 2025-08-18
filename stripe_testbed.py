@@ -178,11 +178,13 @@ def get_payment_details(payment_intent_id):
         ch = pi["latest_charge"]
         bt = ch["balance_transaction"]
         ts = bt["available_on"]
+        created_ts = ch["created"]
 
         print("\nPayment Details:")
         print(f"Payment ID: {pi.id}")
         print(f"Status: {pi.status}")
         print(f"Amount: {pi.amount} {pi.currency}")
+        print(f"Transaction Date: {datetime.fromtimestamp(created_ts, UTC)} (UTC)")
         print(f"Available on: {datetime.fromtimestamp(ts, UTC)} (UTC)")
         print(f"Balance Transaction Status: {bt['status']}")
         print(f"Gross amount: {bt['amount']} {bt['currency']}")
