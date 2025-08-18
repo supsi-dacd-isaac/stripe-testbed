@@ -34,7 +34,6 @@ See `requirements.txt` for specific versions.
      {
          "stripe_api_key": "your_stripe_api_key_here",
          "payment_settings": {
-             "confirmation_wait_time": 30,
              "check_interval": 5,
              "max_attempts": 6
          }
@@ -108,7 +107,6 @@ This will show detailed information about a specific payment, including:
 ### Payment Settings
 The tool supports configurable retry settings for payment processing:
 
-- `confirmation_wait_time`: Total time to wait for confirmation (default: 30 seconds)
 - `check_interval`: Time between status checks (default: 5 seconds)
 - `max_attempts`: Maximum number of retry attempts (default: 6)
 

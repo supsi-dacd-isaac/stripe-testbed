@@ -12,7 +12,6 @@ def load_config(config_path):
             # Set default values if payment_settings is not present
             if 'payment_settings' not in config:
                 config['payment_settings'] = {
-                    'confirmation_wait_time': 30,
                     'check_interval': 5,
                     'max_attempts': 6
                 }
@@ -23,7 +22,7 @@ def load_config(config_path):
 def create_payment(amount=1000, currency="chf", card_number="4242424242424242", exp_month=12, exp_year=2025, cvc="123", config=None):
     """Create a payment intent and return its details"""
     if config is None:
-        config = {'payment_settings': {'confirmation_wait_time': 30, 'check_interval': 5, 'max_attempts': 6}}
+        config = {'payment_settings': {'check_interval': 5, 'max_attempts': 6}}
 
     payment_settings = config['payment_settings']
     check_interval = payment_settings.get('check_interval', 5)
