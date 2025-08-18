@@ -1,4 +1,9 @@
 {
-    "stripe_api_key": "your_stripe_api_key_here"
+    "stripe_api_key": "your_stripe_api_key_here",
+    "payment_settings": {
+        "confirmation_wait_time": 30,
+        "check_interval": 5,
+        "max_attempts": 6
+    }
 }
 

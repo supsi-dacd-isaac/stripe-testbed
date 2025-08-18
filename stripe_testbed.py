@@ -9,12 +9,27 @@ def load_config(config_path):
     try:
         with open(config_path, 'r') as f:
             config = json.load(f)
-            return config.get('stripe_api_key')
+            # Set default values if payment_settings is not present
+            if 'payment_settings' not in config:
+                config['payment_settings'] = {
+                    'confirmation_wait_time': 30,
+                    'check_interval': 5,
+                    'max_attempts': 6
+                }
+            return config
     except Exception as e:
         raise Exception(f"Error loading config file: {str(e)}")
 
-def create_payment(amount=1000, currency="chf"):
+def create_payment(amount=1000, currency="chf", card_number="4242424242424242", exp_month=12, exp_year=2025, cvc="123", config=None):
     """Create a payment intent and return its details"""
+    if config is None:
+        config = {'payment_settings': {'confirmation_wait_time': 30, 'check_interval': 5, 'max_attempts': 6}}
+
+    payment_settings = config['payment_settings']
+    check_interval = payment_settings.get('check_interval', 5)
+    max_attempts = payment_settings.get('max_attempts', 6)
+
+    # Create PaymentIntent
     pi = stripe.PaymentIntent.create(
         amount=amount,
         currency=currency,
@@ -22,29 +37,62 @@ def create_payment(amount=1000, currency="chf"):
         payment_method="pm_card_visa",
         confirm=True
     )
-    print(f"Payment Intent created: {pi.id} (status: {pi.status})")
+    initial_status = pi.status
+    print(f"Payment Intent created: {pi.id}")
+    print(f"Initial status: {initial_status}")
 
-    # Wait for payment confirmation before retrieving balance transaction
-    print("Waiting for payment confirmation...")
-    sleep(30)
+    # Wait for payment confirmation with status updates
+    print("\nWaiting for payment confirmation...")
+    attempts = 0
+    while attempts < max_attempts:
+        print(f"Attempt {attempts + 1}/{max_attempts} - Current status: {pi.status}")
 
-    pi = stripe.PaymentIntent.retrieve(
-        pi.id,
-        expand=["latest_charge.balance_transaction"]
-    )
+        if pi.status in ['succeeded', 'failed', 'canceled']:
+            break
 
-    if pi.get("latest_charge"):
-        ch = pi["latest_charge"]
-        bt = ch["balance_transaction"]
-        print("\nTransaction Details:")
-        print(f"Gross amount: {bt['amount']} {bt['currency']}")
-        print(f"Stripe fee  : {bt['fee']} {bt['currency']}")
-        print(f"Net to you  : {bt['net']} {bt['currency']}")
-        print("\nFee details:")
-        for f in bt["fee_details"]:
-            print(f" - {f['type']:>12}  {f['amount']:>5} {f['currency']}  {f.get('description')}")
-    else:
-        print("No charge found on this PaymentIntent.")
+        print(f"\nWaiting for {check_interval} seconds...")
+        sleep(check_interval)
+        attempts += 1
+        pi = stripe.PaymentIntent.retrieve(pi.id)
+
+    print(f"\nFinal status: {pi.status}")
+
+    if pi.status != 'succeeded':
+        print("Payment did not succeed")
+        return pi
+
+    # Wait for balance transaction to be available
+    print("\nWaiting for balance transaction to be available...")
+    attempts = 0
+    while attempts < max_attempts:
+        pi = stripe.PaymentIntent.retrieve(
+            pi.id,
+            expand=["latest_charge.balance_transaction"]
+        )
+
+        if pi.get("latest_charge") and pi["latest_charge"].get("balance_transaction"):
+            ch = pi["latest_charge"]
+            bt = ch["balance_transaction"]
+            if isinstance(bt, dict) and bt.get("amount") is not None:
+                break
+
+        print(f"Attempt {attempts + 1}/{max_attempts} - Waiting for balance transaction...")
+        sleep(check_interval)
+        attempts += 1
+
+    if not pi.get("latest_charge") or not isinstance(pi["latest_charge"].get("balance_transaction"), dict):
+        print("No balance transaction available after waiting")
+        return pi
+
+    ch = pi["latest_charge"]
+    bt = ch["balance_transaction"]
+    print("\nTransaction Details:")
+    print(f"Gross amount: {bt['amount']} {bt['currency']}")
+    print(f"Stripe fee  : {bt['fee']} {bt['currency']}")
+    print(f"Net to you  : {bt['net']} {bt['currency']}")
+    print("\nFee details:")
+    for f in bt["fee_details"]:
+        print(f" - {f['type']:>12}  {f['amount']:>5} {f['currency']}  {f.get('description')}")
 
     return pi
 
@@ -172,13 +220,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Load configuration and initialize Stripe
-    stripe.api_key = load_config(args.config)
-    if not stripe.api_key:
+    config = load_config(args.config)
+    if not config.get('stripe_api_key'):
         parser.error("No Stripe API key found in configuration file")
+
+    stripe.api_key = config['stripe_api_key']
 
     if args.operation == 'set':
         print(f"Creating a payment of {args.amount} {args.currency}...")
-        pi = create_payment(amount=args.amount, currency=args.currency)
+        pi = create_payment(amount=args.amount, currency=args.currency, config=config)
     elif args.operation == 'get':
         print("Retrieving current balance...")
         balance = get_balance()
