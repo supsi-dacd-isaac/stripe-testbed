@@ -1,7 +1,8 @@
-import os, stripe, time
+import stripe
 import argparse
 import json
 from time import sleep
+from datetime import datetime, UTC
 
 def load_config(config_path):
     """Load configuration from JSON file"""
@@ -11,9 +12,6 @@ def load_config(config_path):
             return config.get('stripe_api_key')
     except Exception as e:
         raise Exception(f"Error loading config file: {str(e)}")
-
-STRIPE_API_KEY = "rk_test_51RutC2Lowti2krcoTbZ6MHROLwMXCXtYIyvSfXM0eZ2Ht1pmJslzIJXrMVz27SmApyL48wO1UKgzELSpaQUAS00J00KtvM9IgR"
-stripe.api_key = STRIPE_API_KEY
 
 def create_payment(amount=1000, currency="chf"):
     """Create a payment intent and return its details"""
@@ -117,13 +115,45 @@ def list_payment_methods():
             print("-" * 40)
     return payment_methods
 
+def get_payment_details(payment_intent_id):
+    """Get detailed information about a specific payment, including balance transaction"""
+    try:
+        pi = stripe.PaymentIntent.retrieve(
+            payment_intent_id,
+            expand=["latest_charge.balance_transaction"]
+        )
+
+        if not pi.get("latest_charge"):
+            print("No charge found for this payment intent")
+            return None
+
+        ch = pi["latest_charge"]
+        bt = ch["balance_transaction"]
+        ts = bt["available_on"]
+
+        print("\nPayment Details:")
+        print(f"Payment ID: {pi.id}")
+        print(f"Status: {pi.status}")
+        print(f"Amount: {pi.amount} {pi.currency}")
+        print(f"Available on: {datetime.fromtimestamp(ts, UTC)} (UTC)")
+        print(f"Balance Transaction Status: {bt['status']}")
+        print(f"Gross amount: {bt['amount']} {bt['currency']}")
+        print(f"Fee: {bt['fee']} {bt['currency']}")
+        print(f"Fee details: {bt['fee_details']}")
+        print(f"Net amount: {bt['net']} {bt['currency']}")
+
+        return pi
+    except stripe.error.StripeError as e:
+        print(f"Error retrieving payment details: {str(e)}")
+        return None
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Stripe operations')
     parser.add_argument('operation',
                        choices=['set', 'get', 'list-payments', 'create-customer',
-                               'create-refund', 'list-methods'],
+                               'create-refund', 'list-methods', 'payment-details'],
                        help='Operation to perform: set (create payment), get (check balance), '
-                            'list-payments, create-customer, create-refund, or list-methods')
+                            'list-payments, create-customer, create-refund, list-methods, or payment-details')
     parser.add_argument('--config', type=str, default='conf/config.json',
                        help='Path to configuration file (default: conf/config.json)')
     parser.add_argument('--amount', type=int, default=1000,
@@ -164,3 +194,7 @@ if __name__ == "__main__":
         refund = create_refund(args.payment_id)
     elif args.operation == 'list-methods':
         payment_methods = list_payment_methods()
+    elif args.operation == 'payment-details':
+        if not args.payment_id:
+            parser.error("--payment-id is required for payment-details operation")
+        get_payment_details(args.payment_id)
