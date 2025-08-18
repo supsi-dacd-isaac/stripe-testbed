@@ -187,7 +187,6 @@ def get_payment_details(payment_intent_id):
         print(f"Balance Transaction Status: {bt['status']}")
         print(f"Gross amount: {bt['amount']} {bt['currency']}")
         print(f"Fee: {bt['fee']} {bt['currency']}")
-        print(f"Fee details: {bt['fee_details']}")
         print(f"Net amount: {bt['net']} {bt['currency']}")
 
         return pi
