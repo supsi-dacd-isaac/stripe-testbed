@@ -46,8 +46,15 @@ logs/
 
 # Configuration files
 python/conf/config.json
+!python/conf/config.json.example
+
 *.config.json
 *.secrets.*
 
 # Keep example configs
 !conf/config.json.example
+
+# Rust section
+rust/conf/*.json
+!rust/conf/config.json.example
+rust/target/

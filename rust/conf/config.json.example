@@ -1,0 +1,7 @@
+{
+  "stripe_api_key": "your_stripe_api_key_here",
+  "payment_settings": {
+    "check_interval": 5,
+    "max_attempts": 6
+  }
+}
