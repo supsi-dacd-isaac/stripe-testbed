@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ brand_name }} · Rust Console Bridge</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body class="fedecom-theme">
+    <header class="app-bar">
+      <div class="brand">
+        <div class="logo-dot">F</div>
+        <div>
+          <p class="brand-name">{{ brand_name }}</p>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="{{ url_for('dashboard') }}" class="{% if active_nav == 'dashboard' %}active{% endif %}">Balance</a>
+        <a href="{{ url_for('payments_view') }}" class="{% if active_nav == 'payments' %}active{% endif %}">Payments</a>
+      </nav>
+      <div class="user-pill">
+        <div class="user-name">{{ user_profile.name }}</div>
+      </div>
+    </header>
+
+    {% block hero %}{% endblock %}
+
+    <main class="page">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="page-grid">
+        <div>
+          {% block content %}{% endblock %}
+        </div>
+        <aside class="console-panel">
+          <p class="eyebrow">Rust console</p>
+          {% if console %}
+            <div class="console-entry">
+              <p class="console-meta">
+                {{ console.label if console.label else "Command" }}
+                {% if console.timestamp %}· {{ console.timestamp }}{% endif %}
+              </p>
+              <div class="console-block">
+                <p class="console-label">stdout</p>
+                <pre>{% for line in console.stdout %}{{ line }}
+{% endfor %}</pre>
+              </div>
+              {% if console.stderr %}
+                <div class="console-block">
+                  <p class="console-label">stderr</p>
+                  <pre>{% for line in console.stderr %}{{ line }}
+{% endfor %}</pre>
+                </div>
+              {% endif %}
+            </div>
+          {% else %}
+            <p class="empty-state">Run an action to view the underlying Rust output.</p>
+          {% endif %}
+        </aside>
+      </div>
+    </main>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>
+
+

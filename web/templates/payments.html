@@ -1,0 +1,97 @@
+{% extends "layout.html" %}
+
+{% block hero %}{% endblock %}
+
+{% block content %}
+<section class="card list-card">
+  <div class="card-header">
+    <div>
+      <p class="eyebrow">Payment Intents</p>
+      <h2>Ledger log</h2>
+    </div>
+  </div>
+
+  {% if list_error %}
+    <p class="empty-state">{{ list_error }}</p>
+  {% elif payments %}
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for payment in payments %}
+          <tr>
+            <td>{{ payment.payment_id }}</td>
+            <td>{{ payment.status }}</td>
+            <td>{{ payment.created_at or "—" }}</td>
+            <td class="actions">
+              <a class="link-button" href="{{ url_for('payments_view', payment_id=payment.payment_id) }}">Details</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty-state">No payments returned by the Rust CLI.</p>
+  {% endif %}
+</section>
+
+{% if detail or detail_error %}
+  <section class="card detail-card">
+    <div class="card-header">
+      <div>
+        <p class="eyebrow">Payment detail</p>
+        <h2>{{ detail.payment_id if detail else "Payment detail" }}</h2>
+      </div>
+    </div>
+
+    {% if detail_error %}
+      <p class="empty-state">{{ detail_error }}</p>
+    {% elif detail %}
+      <div class="detail-grid">
+        <div>
+          <span>Status</span>
+          <strong>{{ detail.status }}</strong>
+        </div>
+        <div>
+          <span>Amount</span>
+          <strong>{{ detail.amount_major | currency }} {{ detail.currency }}</strong>
+        </div>
+        <div>
+          <span>Transaction date</span>
+          <strong>{{ detail.transaction_date }}</strong>
+        </div>
+        <div>
+          <span>Available on</span>
+          <strong>{{ detail.available_on }}</strong>
+        </div>
+      </div>
+      <div class="detail-grid secondary">
+        <div>
+          <span>Gross</span>
+          <strong>{{ detail.gross_major | currency }} {{ detail.currency }}</strong>
+        </div>
+        <div>
+          <span>Fee</span>
+          <strong>{{ detail.fee_major | currency }} {{ detail.currency }}</strong>
+        </div>
+        <div>
+          <span>Net</span>
+          <strong>{{ detail.net_major | currency }} {{ detail.currency }}</strong>
+        </div>
+        <div>
+          <span>Balance status</span>
+          <strong>{{ detail.balance_status }}</strong>
+        </div>
+      </div>
+    {% endif %}
+  </section>
+{% endif %}
+{% endblock %}
+
+

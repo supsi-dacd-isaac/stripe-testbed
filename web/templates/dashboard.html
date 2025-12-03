@@ -1,0 +1,113 @@
+{% extends "layout.html" %}
+
+{% block hero %}{% endblock %}
+
+{% block content %}
+<section class="grid two-columns">
+  <article class="card balance-card">
+    <div class="card-header">
+      <div>
+        <p class="eyebrow">Current Balance</p>
+        <h2>Live overview</h2>
+      </div>
+      <div class="live-controls">
+        <div class="live-meta">
+          <span>Last update</span>
+          <strong>
+            {% if balance_timestamp %}
+              {{ balance_timestamp.strftime("%Y-%m-%d %H:%M:%S UTC") }}
+            {% else %}
+              —
+            {% endif %}
+          </strong>
+          <small>Auto refresh every {{ auto_refresh_seconds }}s</small>
+        </div>
+        <form method="post">
+          <input type="hidden" name="action" value="refresh-balance">
+          <button type="submit" class="secondary ghost">Refresh balance</button>
+        </form>
+      </div>
+    </div>
+    {% if balance_error %}
+      <p class="empty-state">{{ balance_error }}</p>
+    {% elif balance %}
+      <div class="totals single">
+        <div class="total-card available">
+          <span>Available funds</span>
+          <strong>CHF {{ balance.available_total | currency }}</strong>
+        </div>
+        <div class="total-card pending">
+          <span>Pending funds</span>
+          <strong>CHF {{ balance.pending_total | currency }}</strong>
+        </div>
+      </div>
+    {% else %}
+      <p class="empty-state">Balance data is not available right now.</p>
+    {% endif %}
+  </article>
+
+  <article class="card actions-card">
+    <p class="eyebrow">Adjust balance</p>
+    <h2>Collect test charge</h2>
+    <form method="post" action="{{ url_for('create_payment_action') }}" class="form-grid">
+      <label>
+        <span>Amount (CHF)</span>
+        <input type="number" name="amount_chf" min="0.50" step="0.50" placeholder="100.00" required>
+      </label>
+      <button type="submit">Create payment</button>
+    </form>
+  </article>
+</section>
+
+<section class="card list-card">
+  <div class="card-header">
+    <div>
+      <p class="eyebrow">Latest activity</p>
+      <h2>Recent payments</h2>
+    </div>
+    <a href="{{ url_for('payments_view') }}" class="link-button">View all</a>
+  </div>
+  {% if spotlight_payments %}
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th class="numeric">Amount (CHF)</th>
+          <th class="numeric">Fee (CHF)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for payment in spotlight_payments %}
+          <tr>
+            <td>{{ payment.payment_id }}</td>
+            <td>{{ payment.status }}</td>
+            <td>{{ payment.created_at or "—" }}</td>
+            <td class="numeric">{{ payment.amount_major | currency }} {{ payment.currency }}</td>
+            <td class="numeric">
+              {% if payment.fee_major is not none %}
+                {{ payment.fee_major | currency }} {{ payment.currency }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty-state">No payments returned by the Rust CLI.</p>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    setInterval(() => {
+      window.location.reload();
+    }, {{ auto_refresh_seconds * 1000 }});
+  </script>
+{% endblock %}
+
+
