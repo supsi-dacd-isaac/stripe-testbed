@@ -1,0 +1,33 @@
+# =============================================================================
+# FEDECOM Stripe Demo — Docker Compose
+# =============================================================================
+# Usage:
+#   docker compose up --build        # Build and start
+#   docker compose up -d             # Start in background
+#   docker compose logs -f web       # Follow logs
+#   docker compose down              # Stop and remove containers
+# =============================================================================
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    container_name: fedecom-stripe-demo
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount the Stripe config file (required)
+      - ./rust/conf/config.json:/app/rust/conf/config.json:ro
+    environment:
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-docker-secret-change-me}
+      - DEMO_USER_NAME=${DEMO_USER_NAME:-SUPSI demo user}
+      - FLASK_DEBUG=${FLASK_DEBUG:-0}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+

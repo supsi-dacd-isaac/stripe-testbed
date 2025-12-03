@@ -119,6 +119,69 @@ The server starts at **http://127.0.0.1:5000**.
 
 ---
 
+## Running with Docker
+
+The application is fully containerized. The Docker image uses a **multi-stage build**:
+
+1. **Stage 1 (builder):** Compiles the Rust CLI binary using `rust:1.83-bookworm`.
+2. **Stage 2 (runtime):** Runs Flask on `python:3.12-slim-bookworm` with the pre-compiled binary.
+
+### Using Docker Compose (Recommended)
+
+```bash
+# Build and start the container
+docker compose up --build
+
+# Run in detached mode
+docker compose up -d
+
+# View logs
+docker compose logs -f web
+
+# Stop the container
+docker compose down
+```
+
+The `docker-compose.yml` file:
+
+- Mounts `rust/conf/config.json` into the container (required for Stripe API keys).
+- Exposes port **5000**.
+- Accepts environment variables for customization.
+
+### Using Docker Directly
+
+```bash
+# Build the image
+docker build -f web/Dockerfile -t fedecom-stripe-demo .
+
+# Run the container
+docker run -d \
+  --name fedecom-stripe-demo \
+  -p 5000:5000 \
+  -v "$(pwd)/rust/conf/config.json:/app/rust/conf/config.json:ro" \
+  -e FLASK_SECRET_KEY="your-secret-key" \
+  -e DEMO_USER_NAME="SUPSI demo user" \
+  fedecom-stripe-demo
+```
+
+### Docker Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FLASK_SECRET_KEY` | `docker-secret-change-me` | Secret key for Flask sessions. |
+| `DEMO_USER_NAME` | `SUPSI demo user` | Display name in the UI. |
+| `FLASK_DEBUG` | `0` | Set to `1` for debug mode (not recommended in production). |
+
+### Docker Health Check
+
+The container includes a health check that verifies the Flask server is responding. Check status with:
+
+```bash
+docker inspect --format='{{.State.Health.Status}}' fedecom-stripe-demo
+```
+
+---
+
 ## CLI Commands Exposed
 
 The web interface wraps these Rust CLI commands:
@@ -166,6 +229,9 @@ Cards, buttons, and tables are styled with consistent padding, subtle shadows, a
 | CLI times out | Increase `timeout` in `RustStripeRunner` or check Stripe API connectivity. |
 | Balance shows 0 | Verify `rust/conf/config.json` contains valid Stripe test keys. |
 | Console not updating | Ensure you're performing a *manual* action; background refreshes don't log to the console. |
+| Docker: config not found | Ensure `rust/conf/config.json` exists before running `docker compose up`. |
+| Docker: build fails on Rust | The Rust stage requires network access to download crates. Check your network/proxy settings. |
+| Docker: permission denied | The container runs as a non-root user. Ensure mounted files are readable (`chmod 644 config.json`). |
 
 ---
 

@@ -1,0 +1,51 @@
+# =============================================================================
+# FEDECOM Stripe Demo — Docker Build Exclusions
+# =============================================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+.eggs/
+*.egg-info/
+*.egg
+
+# Rust build artifacts (we rebuild inside Docker)
+rust/target/
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Docker files themselves
+.dockerignore
+docker-compose*.yml
+
+# Documentation (not needed in runtime image)
+*.md
+*.odp
+*.pdf
+demo_example_template.*
+
+# Config examples (real config mounted at runtime)
+**/conf/*.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python test/dev config
+python/conf/
+
